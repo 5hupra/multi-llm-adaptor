@@ -7,6 +7,6 @@ class BaseLLMProvider(ABC):
         message: list,
         temperature: float=0.7,
         max_tokens: int=500,
-        stream: bool=false,
+        stream: bool=False,
     ) -> dict:
         pass

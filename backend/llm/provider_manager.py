@@ -1,6 +1,6 @@
 from .ollama_provider import OllamaProvider
 
-class LLMManager:
+class LLMProviderManager:
     def __init__(self, provider: str = "ollama", model: str | None = None):
         self.provider_name = provider.lower()
         self.model = model
