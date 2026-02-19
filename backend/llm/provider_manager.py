@@ -15,4 +15,10 @@ class LLMProviderManager:
         raise ValueError(f"Invalid provider: {self.provider_name}")
     
     def generate(self, messages: list):
-        return self.provider.generate(messages)
+        try:
+            provider = self.load_provider()
+            return provider.generate(messages)
+        
+        except Exception:
+            fallback = OllamaProvider(model_name=self.model or "phi3")
+            return fallback.generate(messages)
