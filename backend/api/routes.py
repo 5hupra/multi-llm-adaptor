@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.llm.provider_manager import LLMProviderManager
+from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
@@ -9,6 +10,7 @@ class ChatRequest(BaseModel):
     provider: str | None="auto"
     model: str | None=None
     api_key: str | None=None
+    stream: bool=False
 
 @router.post("/chat")
 def chat(request: ChatRequest):
@@ -18,6 +20,12 @@ def chat(request: ChatRequest):
         api_key=request.api_key
     )
 
-    response = manager.generate([{"role":"user", "content": request.message}])
+    messages = [{"role":"user", "content": request.message}]
 
-    return response
+    #streaming
+    if request.stream:
+        generator = manager.generate(messages, stream=True)
+        return StreamingResponse(generator, media_type="text/plain")
+    
+    #normal response
+    return manager.generate(messages)
