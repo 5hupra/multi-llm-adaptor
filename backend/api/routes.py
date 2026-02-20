@@ -2,6 +2,10 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.llm.provider_manager import LLMProviderManager
 from fastapi.responses import StreamingResponse
+from backend.utils.logger import setup_logger
+import time
+
+logger = setup_logger()
 
 router = APIRouter()
 
@@ -14,6 +18,9 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 def chat(request: ChatRequest):
+    start_time = time.time()
+    logger.info("Request received")
+
     manager = LLMProviderManager(
         provider=request.provider,
         model=request.model,
@@ -22,10 +29,24 @@ def chat(request: ChatRequest):
 
     messages = [{"role":"user", "content": request.message}]
 
-    #streaming
-    if request.stream:
-        generator = manager.generate(messages, stream=True)
-        return StreamingResponse(generator, media_type="text/plain")
-    
-    #normal response
-    return manager.generate(messages)
+    try:
+        #streaming
+        if request.stream:
+            logger.info("Streaming response working")
+            def stream_generator():
+                for chunk in manager.generate(messages, stream=True):
+                    yield chunk
+            return StreamingResponse(stream_generator(), media_type="text/plain")
+        
+        #normal response
+        response = manager.generate(messages)
+
+        duration = round(time.time() - start_time, 2)
+        logger.info(f"Provider used: {manager.provider_name}")
+        logger.info(f"Response time: {duration}s")
+
+        return response
+
+    except Exception as e:
+        logger.error(f"Error in request processing: {str(e)}")
+        raise

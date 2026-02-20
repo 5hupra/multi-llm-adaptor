@@ -1,6 +1,9 @@
 from .ollama_provider import OllamaProvider
 from .openai_provider import OpenAIProvider
+from backend.utils.logger import setup_logger
 import os
+
+logger = setup_logger()
 
 class LLMProviderManager:
     def __init__(self, provider: str = "auto", model: str | None = None, api_key: str | None=None):
@@ -31,8 +34,12 @@ class LLMProviderManager:
     def generate(self, messages: list, stream: bool = False):
         try:
             provider = self.load_provider()
+            logger.info(f"Using provider: {self.provider_name}")
             return provider.generate(messages, stream=stream)
-        
-        except Exception:
+
+        except Exception as e:
+            logger.warning("Primary provider failed, using fallback")
+            logger.warning(str(e))
+
             fallback = OllamaProvider(model_name=self.model or "phi3")
             return fallback.generate(messages, stream=stream)
