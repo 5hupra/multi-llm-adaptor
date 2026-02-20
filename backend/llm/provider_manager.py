@@ -1,5 +1,6 @@
 from .ollama_provider import OllamaProvider
 from .openai_provider import OpenAIProvider
+import os
 
 class LLMProviderManager:
     def __init__(self, provider: str = "auto", model: str | None = None, api_key: str | None=None):
@@ -9,16 +10,19 @@ class LLMProviderManager:
 
     def load_provider(self):
         if self.provider_name == "openai":
-            if not self.api_key:
+            api_key = self.api_key or os.getenv("OPENAI_API_KEY")
+            if not api_key:
                 raise ValueError("API key required for OpenAI provider")
             return OpenAIProvider(
-                api_key=self.api_key,
+                api_key=api_key,
                 model_name=self.model or "gpt-4o-mini"
             )
         if self.provider_name == "ollama":
             return OllamaProvider(model_name=self.model or "phi3")
         if self.provider_name == "auto":
-            if self.api_key:
+            api_key = self.api_key or os.getenv("OPENAI_API_KEY")
+            
+            if api_key:
                 return OpenAIProvider(api_key=self.api_key, model_name=self.model or "gpt-4o-mini")
             return OllamaProvider(model_name=self.model or"phi3")
         
