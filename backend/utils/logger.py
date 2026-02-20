@@ -18,7 +18,7 @@ def setup_logger():
     console_handler.setFormatter(formatter)
 
     file_handler = RotatingFileHandler(
-        "adaptorLogs.log", maxBytes=2_000_000, backupCount=3
+        "adaptorLogs.log", maxBytes=2000000, backupCount=3
     )
     file_handler.setFormatter(formatter)
 

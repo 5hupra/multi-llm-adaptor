@@ -11,7 +11,7 @@ class  OllamaProvider(BaseLLMProvider):
                  temperature: float = 0.7,
                  max_tokens: int = 500,
                  stream: bool = False
-    ) -> dict:
+    ) -> object:
         
         prompt_parts = []
         for msg in messages:
