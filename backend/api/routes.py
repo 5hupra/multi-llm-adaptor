@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi import HTTPException
 from pydantic import BaseModel
 from backend.llm.provider_manager import LLMProviderManager
 from fastapi.responses import StreamingResponse
@@ -49,7 +50,8 @@ def chat(request: ChatRequest):
 
     except Exception as e:
         logger.error(f"Error in request processing: {str(e)}")
-        raise
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 

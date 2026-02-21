@@ -26,30 +26,32 @@ class  OllamaProvider(BaseLLMProvider):
             "stream": stream
         }
 
-        if not stream:
-            response = httpx.post(self.url, json=payload, timeout=180)
+        if stream:
+            return self._stream_generate(payload)
+
+        response = httpx.post(self.url, json=payload, timeout=180)
+        response.raise_for_status()
+
+        data = response.json()
+        return {
+            "text": data.get("response", "").strip(),
+            "usage": {},
+            "model": self.model_name,
+            "provider": "ollama",
+        }
+
+    def _stream_generate(self, payload: dict):
+        with httpx.stream("POST", self.url, json=payload, timeout=180) as response:
             response.raise_for_status()
 
-            data = response.json()
-            return {
-                "text": data.get("response", "").strip(),
-                "usage": {},
-                "model": self.model_name,
-                "provider": "ollama",
-            }
-        #streaming
-        else:
-            with httpx.stream("POST", self.url, json=payload, timeout=180) as response:
-                response.raise_for_status()
+            for line in response.iter_lines():
+                if not line:
+                    continue
+                try:
+                    import json
+                    chunk = json.loads(line.decode("utf-8"))
 
-                for line in response.iter_lines():
-                    if not line:
-                        continue
-                    try:
-                        import json
-                        chunk = json.loads(line.decode("utf-8"))
-
-                        if "response" in chunk:
-                           yield chunk["response"]
-                    except Exception:
-                        continue
+                    if "response" in chunk:
+                        yield chunk["response"]
+                except Exception:
+                    continue

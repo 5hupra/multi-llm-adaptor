@@ -6,6 +6,8 @@ import os
 logger = setup_logger()
 
 class LLMProviderManager:
+    OLLAMA_MODELS = {"phi3", "llama3"}
+
     def __init__(self, provider: str = "auto", model: str | None = None, api_key: str | None=None):
         self.provider_name = (provider or "auto").lower()
         self.model = model
@@ -14,8 +16,8 @@ class LLMProviderManager:
     def list_models(self):
         return {
             "providers": {
-                "ollama": ["phi3, llama3"],
-                "openai": ["gpt-o-mini"]
+                "ollama": ["phi3", "llama3"],
+                "openai": ["gpt-4o-mini"]
             }
         }
 
@@ -34,7 +36,7 @@ class LLMProviderManager:
             api_key = self.api_key or os.getenv("OPENAI_API_KEY")
             
             if api_key:
-                return OpenAIProvider(api_key=self.api_key, model_name=self.model or "gpt-4o-mini")
+                return OpenAIProvider(api_key=api_key, model_name=self.model or "gpt-4o-mini")
             return OllamaProvider(model_name=self.model or"phi3")
         
         raise ValueError(f"Invalid provider: {self.provider_name}")
@@ -49,5 +51,6 @@ class LLMProviderManager:
             logger.warning("Primary provider failed, using fallback")
             logger.warning(str(e))
 
-            fallback = OllamaProvider(model_name=self.model or "phi3")
+            fallback_model = self.model if self.model in self.OLLAMA_MODELS else "phi3"
+            fallback = OllamaProvider(model_name=fallback_model)
             return fallback.generate(messages, stream=stream)
