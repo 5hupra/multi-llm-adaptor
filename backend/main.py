@@ -9,3 +9,7 @@ logger = setup_logger()
 
 app = FastAPI(title="Multi LLM Adaptor")
 app.include_router(router)
+
+@app.get("/")
+def root():
+    return {"message": "Adaptor API is running"}

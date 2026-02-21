@@ -11,6 +11,14 @@ class LLMProviderManager:
         self.model = model
         self.api_key = api_key
 
+    def list_models(self):
+        return {
+            "providers": {
+                "ollama": ["phi3, llama3"],
+                "openai": ["gpt-o-mini"]
+            }
+        }
+
     def load_provider(self):
         if self.provider_name == "openai":
             api_key = self.api_key or os.getenv("OPENAI_API_KEY")

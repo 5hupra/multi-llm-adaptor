@@ -50,3 +50,11 @@ def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Error in request processing: {str(e)}")
         raise
+
+
+
+
+@router.get("/models")
+def get_modes():
+    manager = LLMProviderManager()
+    return manager.list_models()
