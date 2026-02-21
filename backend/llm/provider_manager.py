@@ -45,12 +45,28 @@ class LLMProviderManager:
         try:
             provider = self.load_provider()
             logger.info(f"Using provider: {self.provider_name}")
-            return provider.generate(messages, stream=stream)
+
+            response = provider.generate(messages, stream=stream)
+
+            return {
+                "response": response,
+                "provider": self.provider_name,
+                "fallback": False,
+            }
 
         except Exception as e:
             logger.warning("Primary provider failed, using fallback")
             logger.warning(str(e))
 
-            fallback_model = self.model if self.model in self.OLLAMA_MODELS else "phi3"
+            fallback_model = (
+                self.model if self.model in self.OLLAMA_MODELS else "phi3"
+            )
+
             fallback = OllamaProvider(model_name=fallback_model)
-            return fallback.generate(messages, stream=stream)
+            response = fallback.generate(messages, stream=stream)
+
+            return {
+                "response": response,
+                "provider": "ollama",
+                "fallback": True,
+            }
