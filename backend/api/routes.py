@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from fastapi import HTTPException
 from pydantic import BaseModel
 from backend.llm.provider_manager import LLMProviderManager
+from backend.llm.ollama_provider import OllamaProvider
 from fastapi.responses import StreamingResponse
 from backend.utils.logger import setup_logger
 import time
@@ -34,11 +35,36 @@ def chat(request: ChatRequest):
         #streaming
         if request.stream:
             logger.info("Streaming response working")
+
             def stream_generator():
-                for chunk in manager.generate(messages, stream=True):
-                    yield chunk
+                try:
+                    provider = manager.load_provider()
+                    result = provider.generate(messages, stream=True)
+
+                    # If provider returns non-stream dict (like current OpenAIProvider),
+                    # emit its text once instead of iterating dict keys.
+                    if isinstance(result, dict):
+                        text = result.get("text", "")
+                        if text:
+                            yield text
+                        return
+
+                    # Normal streaming generator
+                    for chunk in result:
+                        yield chunk
+
+                except Exception as e:
+                    logger.warning(f"Primary stream failed, using Ollama fallback: {e}")
+
+                    fallback_model = manager.model if manager.model in manager.OLLAMA_MODELS else "phi3"
+                    fallback = OllamaProvider(model_name=fallback_model)
+
+                    for chunk in fallback.generate(messages, stream=True):
+                        yield chunk
+
             return StreamingResponse(stream_generator(), media_type="text/plain")
-        
+
+
         #normal response
         response = manager.generate(messages)
 

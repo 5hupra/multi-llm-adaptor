@@ -1,4 +1,5 @@
 import httpx
+import json
 from .base_provider import BaseLLMProvider
 
 class  OllamaProvider(BaseLLMProvider):
@@ -48,10 +49,15 @@ class  OllamaProvider(BaseLLMProvider):
                 if not line:
                     continue
                 try:
-                    import json
-                    chunk = json.loads(line.decode("utf-8"))
+                    data = json.loads(line)
 
-                    if "response" in chunk:
-                        yield chunk["response"]
+                    # Ollama normal streaming
+                    if isinstance(data.get("response"), str):
+                        yield data["response"]
+
+                    # nested object
+                    elif isinstance(data.get("response"), dict):
+                        yield data["response"].get("text", "")
+
                 except Exception:
                     continue
